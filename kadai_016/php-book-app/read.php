@@ -7,14 +7,42 @@ $password = 'root';
 try {
     $pdo = new PDO($dsn, $user, $password);
 
-    // booksテーブルから全てのカラムのデータを取得するためのSQL文を変数＄sqlに代入する
-    $sql_select = 'SELECT * FROM books';
+    // orderパラメータの値が存在すれば(並び替えボタンを押した時)その値を変数$orderに代入
+    if(isset($_GET['order'])){
+        $order = $_GET['order'];
+    } else {
+        $order = NULL;
+    }
 
-    // SQL文を実行する
-    $stmt_select = $pdo->query($sql_select);
+    // keywordパラメータの値が存在すれば(書籍名を検索時)その値を変数$keywordに代入
+    if(isset($_GET['keyword'])){
+        $keyword = $_GET['keyword'];
+    } else {
+        $keyword = NULL;
+    }
 
-    // SQL文の実行結果を配列で取得する
-    $products = $stmt_select->fetchALL(PDO::FETCH_ASSOC);
+    // orderパラメータの値によってSQL文を変更
+    if($order === 'desc'){
+        $sql_select = 'SELECT * FROM books WHERE book_name LIKE :keyword ORDER BY updated_at DESC';
+    } else {
+        $sql_select = 'SELECT * FROM books WHERE book_name LIKE :keyword ORDER BY updated_at ASC';
+    }
+
+    // SQL文を実行
+    $stmt_select = $pdo->prepare($sql_select);
+
+    // SQLのLIKE句で使うため、$keyword(検索ワード)の前後を%で囲む(部分一致)
+    // 補足:partial match=部分一致
+    $partial_match = "%{$keyword}%";
+
+    // bindValue()メソッドを使って実際の値をプレースホルダにバインド(割り当て)
+    $stmt_select->bindValue(':keyword', $partial_match, PDO::PARAM_STR);
+
+    // SQLを実行
+    $stmt_select->execute();
+
+    // SQL文の実行結果を配列で取得
+    $books = $stmt_select->fetchALL(PDO::FETCH_ASSOC);
 } catch(PDOException $e) {
     exit($e->getMessage());
 }
@@ -43,11 +71,26 @@ try {
         <main>
             <article class="books">
                 <h1>書籍一覧</h1>
+                <?php
+                // (書籍登録•編集•削除後)messageパラメータの値を受け取っていれば、表示
+                if(isset($_GET['message'])){
+                    echo "<p class='success'>{$_GET['message']}</p>";
+                }
+                ?>
                 <div class="books-ui">
                     <div>
-                        <!-- ここに並び替えボタンと検索ボックスを作成 -->
+                        <a href="read.php?order=desc&keyword=<?= $keyword ?>">
+                            <img src="images/desc.png" alt="降順に並び替え" class="sort-img">
+                        </a>
+                        <a href="read.php?order=asc&keyword=<?= $keyword ?>">
+                            <img src="images/asc.png" alt="昇順に並び替え" class="sort-img">
+                        </a>
+                        <form action="read.php" method="get" class="search-form">
+                            <input type="hidden" name="order" value="<?= $order ?>">
+                            <input type="text" class="search-box" placeholder="書籍名で検索" name="keyword" value="<?= $keyword ?>">
+                        </form>
                     </div>
-                    <a href="#" class="btn">書籍登録</a>
+                    <a href="create.php" class="btn">書籍登録</a>
                 </div>
                 <table class="books-table">
                     <tr>
@@ -56,6 +99,7 @@ try {
                         <th>単価</th>
                         <th>在庫数</th>
                         <th>ジャンルコード</th>
+                        <th>編集</th>
                     </tr>
                     <?php
                     // 配列の中身を順番に取り出し、表形式で出力
@@ -65,8 +109,9 @@ try {
                         <td>{$book['book_code']}</td>
                         <td>{$book['book_name']}</td>
                         <td>{$book['price']}</td>
-                        <td>{$book['stock-quantity']}</td>
+                        <td>{$book['stock_quantity']}</td>
                         <td>{$book['genre_code']}</td>
+                        <td><a href='update.php?id={$book['id']}'><img src='images/edit.png' alt='編集' class='edit-icon'></a></td>
                         </tr>
                         ";
                         echo $table_row;
