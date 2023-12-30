@@ -1,7 +1,47 @@
 <?php
-$dsn = 'mysql=php_book_app;host=localhost;charset=utf8mb4';
+$dsn = 'mysql:dbname=php_book_app;host=localhost;charset=utf8mb4';
 $user = 'root';
 $password = 'root';
+
+// submitパラメータの値が存在するとき（「更新」ボタンを押したとき）の処理
+if (isset($_POST['submit'])) {
+try {
+    $pdo = new PDO($dsn, $user, $password);
+
+    // 動的に変わる値をプレースホルダに置き換えたUPDATE文をあらかじめ用意
+    $sql_update = '
+        UPDATE books
+        SET book_code = :book_code,
+        book_name = :book_name,
+        price = :price,
+        stock_quantity = :stock_quantity,
+        genre_code = :genre_code
+        WHERE id = :id
+    ';
+    $stmt_update = $pdo->prepare($sql_update);
+
+    // bindValue()メソッドを使って実際の値をプレースホルダにバインド（割り当て）
+    $stmt_update->bindValue(':book_code', $_POST['book_code'], PDO::PARAM_INT);
+    $stmt_update->bindValue(':book_name', $_POST['book_name'], PDO::PARAM_STR);
+    $stmt_update->bindValue(':price', $_POST['price'], PDO::PARAM_INT);
+    $stmt_update->bindValue(':stock_quantity', $_POST['stock_quantity'], PDO::PARAM_INT);
+    $stmt_update->bindValue(':genre_code', $_POST['genre_code'], PDO::PARAM_INT);
+    $stmt_update->bindValue(':id', $_GET['id'], PDO::PARAM_INT);
+
+    // SQL文を実行
+    $stmt_update->execute();
+
+    // 更新した件数を取得
+    $count = $stmt_update->rowCount();
+
+    $message = "書籍を{$count}件編集しました。";
+
+    // 書籍一覧ページにリダイレクト（同時にmessageパラメータも渡す）
+    header("Location: read.php?message={$message}");
+} catch (PDOException $e) {
+    exit($e->getMessage());
+}
+}
 
 // idパラメータの値が存在すれば処理実行
 if(isset($_GET['id'])){

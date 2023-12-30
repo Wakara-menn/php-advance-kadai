@@ -100,6 +100,7 @@ try {
                         <th>在庫数</th>
                         <th>ジャンルコード</th>
                         <th>編集</th>
+                        <th>削除</th>
                     </tr>
                     <?php
                     // 配列の中身を順番に取り出し、表形式で出力
@@ -112,6 +113,7 @@ try {
                         <td>{$book['stock_quantity']}</td>
                         <td>{$book['genre_code']}</td>
                         <td><a href='update.php?id={$book['id']}'><img src='images/edit.png' alt='編集' class='edit-icon'></a></td>
+                        <td><a href='delete.php?id={$book['id']}'><img src='images/delete.png' alt='削除' class='delete-icon'></a></td>                        
                         </tr>
                         ";
                         echo $table_row;

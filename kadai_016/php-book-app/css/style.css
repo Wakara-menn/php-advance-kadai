@@ -164,7 +164,8 @@ border-collapse: collapse;
     color: #28a745;
 }
 
-.edit-icon {
+.edit-icon,
+.delete-icon {
     height: 1.5rem;
     vertical-align: top;
 }
